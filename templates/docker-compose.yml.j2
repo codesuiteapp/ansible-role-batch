@@ -1,0 +1,58 @@
+version: "3"
+services:
+  jenkins:
+    image: ${DOCKER_IMAGE}
+    container_name: batch
+    user: root
+    privileged: true
+    environment:
+      - JENKINS_OPTS="--prefix=/batch"
+      - JENKINS_UC_DOWNLOAD="https://ftp.yz.yamagata-u.ac.jp/pub/misc/jenkins/"
+      - JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.akuma.Daemon=daemonized"
+      # - JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.akuma.Daemon=daemonized -Dcasc.jenkins.config=/var/jenkins_home/casc_configs/jenkins.yml"
+      - TZ=Asia/Seoul
+{% if use_traefik %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jenkins.entrypoints=web,websecure"
+      - "traefik.http.routers.jenkins.rule=Host(`${trf_domain}`) && PathPrefix(`/batch`)"
+    {% if use_traefik_tls %}
+      - "traefik.http.routers.jenkins.tls=true"
+    {% endif %}
+{% endif %}
+    ports:
+      - "{{ jenkins_port }}:8080"
+      - "9090:9090"
+      - "50000:50000"
+    volumes:
+      - ./gitconfig:/root/.gitconfig
+      - ./settings.xml:/root/.m2/settings.xml
+{% if use_kubeconfig %}
+      - ./kubeconfig:/root/.kube/config
+{% endif %}
+{% if use_ssh %}
+      - ./.ssh/id_rsa:/root/.ssh/id_rsa
+      - ./.ssh/id_rsa.pub:/root/.ssh/id_rsa.pub
+{% endif %}
+      - {{ jenkins_data }}:/var/jenkins_home
+      - {{ jenkins_data }}/casc_configs:/var/jenkins_home/casc_configs
+      - {{ nexus_data }}:{{ nexus_data }}
+      - /bin/docker:/bin/docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      # - /usr/local/bin/kubectl:/usr/local/bin/kubectl
+    restart: unless-stopped
+    tty: true
+{% if use_extra_hosts %}
+    extra_hosts:
+    {% for host in extra_hosts %}
+    - {{ host }}
+    {% endfor %}
+{% endif %}
+{% if use_dkr_net %}
+    networks:
+      - {{ dkr_network }}
+
+networks:
+  {{ dkr_network }}:
+    external: true
+{% endif %}

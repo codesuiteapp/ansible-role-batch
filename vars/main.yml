@@ -1,0 +1,6 @@
+---
+jenkins_home: "{{ app_home_dir }}/batch-docker"
+jenkins_data: "{{ app_data_dir }}/jenkins_home"
+jenkins_git_user: jBatch
+jenkins_git_email: manager@koscom.co.kr
+extra_hosts: ["devops.com:10.11.22.33"]
