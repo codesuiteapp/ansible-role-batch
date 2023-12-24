@@ -16,14 +16,14 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.jenkins.entrypoints=web,websecure"
       - "traefik.http.routers.jenkins.rule=Host(`${trf_domain}`) && PathPrefix(`/batch`)"
-    {% if use_traefik_tls %}
+{% endif %}
+{% if use_traefik and use_traefik_tls %}
       - "traefik.http.routers.jenkins.tls=true"
-    {% endif %}
 {% endif %}
     ports:
       - "{{ jenkins_port }}:8080"
-      - "9090:9090"
-      - "50000:50000"
+      - "{{ websock_port }}:9090"
+      - "{{ agent_port }}:50000"
     volumes:
       - ./gitconfig:/root/.gitconfig
       - ./settings.xml:/root/.m2/settings.xml
@@ -34,6 +34,8 @@ services:
       - ./.ssh/id_rsa:/root/.ssh/id_rsa
       - ./.ssh/id_rsa.pub:/root/.ssh/id_rsa.pub
 {% endif %}
+      - ./gitconfig:/root/.gitconfig
+      - ./settings.xml:/root/.m2/settings.xml
       - {{ jenkins_data }}:/var/jenkins_home
       - {{ jenkins_data }}/casc_configs:/var/jenkins_home/casc_configs
       - {{ nexus_data }}:{{ nexus_data }}
